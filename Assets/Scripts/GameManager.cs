@@ -1,18 +1,58 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using Zenject;
+
 
 public class GameManager : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public enum GameStates
     {
-        
+        MainMenu,
+        Gameplay,
+        GameOver,
+        LevelCompleted
     }
 
-    // Update is called once per frame
-    void Update()
+    public static UnityAction OnGameStarted, OnGameSceneLoad;
+    public static UnityAction OnGameOver, OnLevelComplete;
+    public static UnityAction<GameStates> OnGameStateChange;
+
+    private GameStates currentState = GameStates.MainMenu;
+
+    public GameStates CurrentState
     {
-        
+        get => currentState;
+        set
+        {
+            currentState = value;
+            OnGameStateChange?.Invoke(value);
+        }
+    }
+
+    [Inject]
+    private void Construct()
+    {
+        OnGameSceneLoad?.Invoke();
+    }
+
+    public void GameStarted()
+    {
+        OnGameStarted?.Invoke();
+        CurrentState = GameStates.Gameplay;
+
+        //CameraManager.ChangeCamera(CameraType.Gameplay);
+    }
+
+    public void GameOver()
+    {
+        OnGameOver?.Invoke();
+        CurrentState = GameStates.GameOver;
+    }
+
+    public void LevelCompleted()
+    {
+        OnLevelComplete?.Invoke();
+        CurrentState = GameStates.LevelCompleted;
     }
 }
