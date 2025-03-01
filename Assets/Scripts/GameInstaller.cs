@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NaughtyAttributes;
@@ -12,9 +13,16 @@ public class GameInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
+        BindStateMachine<Player, Player.PlayerStates>();
+
         BindFromInstance(cameraManager);
         BindFromInstance(gameManager);
         BindFromInstance(objectPooler);
+    }
+
+    private void BindStateMachine<T, TState>() where T : MonoBehaviour where TState : struct, Enum
+    {
+        Container.Bind<StateMachine<T, TState>>().AsTransient();
     }
 
     private void BindFromInstance<T>(T instance) where T : class

@@ -1,18 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
+using NaughtyAttributes;
 using UnityEngine;
 
 public class PlayerAnimationController : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField, Foldout("Setup")] private Animator animator;
+
+    private static readonly int stayKey = Animator.StringToHash("Stay");
+    private static readonly int danceKey = Animator.StringToHash("Dance");
+    private static readonly int runKey = Animator.StringToHash("Run");
+
+    public void Stay()
     {
-        
+        animator.SetTrigger(stayKey);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Run()
     {
-        
+        animator.SetTrigger(runKey);
+    }
+
+    public void Dance()
+    {
+        animator.SetTrigger(danceKey);
     }
 }
