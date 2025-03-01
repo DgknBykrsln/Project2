@@ -8,14 +8,6 @@ using Zenject;
 
 public class CameraManager : MonoBehaviour
 {
-    public enum CameraType
-    {
-        IntroCamera,
-        GameplayCamera,
-        WinCamera,
-        FailCamera
-    }
-
     [SerializeField, Foldout("Setup")] private Camera mainCamera;
 
     [SerializeField] private List<CameraController> cameras;
@@ -36,27 +28,27 @@ public class CameraManager : MonoBehaviour
         switch (gameState)
         {
             case GameManager.GameStates.MainMenu:
-                ChangeCamera(CameraType.IntroCamera);
+                ChangeCamera(CameraController.CameraType.IntroCamera);
                 break;
             case GameManager.GameStates.Gameplay:
-                ChangeCamera(CameraType.GameplayCamera);
+                ChangeCamera(CameraController.CameraType.GameplayCamera);
                 break;
             case GameManager.GameStates.LevelCompleted:
-                ChangeCamera(CameraType.WinCamera);
+                ChangeCamera(CameraController.CameraType.WinCamera);
                 break;
             case GameManager.GameStates.GameOver:
-                ChangeCamera(CameraType.FailCamera);
+                ChangeCamera(CameraController.CameraType.FailCamera);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
         }
     }
 
-    private void ChangeCamera(CameraType cameraType)
+    private void ChangeCamera(CameraController.CameraType cameraType)
     {
         foreach (var cam in cameras)
         {
-            cam.gameObject.SetActive(cam.CameraType == cameraType);
+            cam.gameObject.SetActive(cam.Type == cameraType);
         }
     }
 }

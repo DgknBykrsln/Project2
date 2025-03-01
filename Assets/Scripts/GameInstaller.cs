@@ -9,12 +9,14 @@ public class GameInstaller : MonoInstaller
 {
     [SerializeField, Foldout("Setup")] private GameManager gameManager;
     [SerializeField, Foldout("Setup")] private CameraManager cameraManager;
+    [SerializeField, Foldout("Setup")] private UiManager uiManager;
     [SerializeField, Foldout("Setup")] private ObjectPooler objectPooler;
 
     public override void InstallBindings()
     {
         BindStateMachine<Player, Player.PlayerStates>();
 
+        BindFromInstance(uiManager);
         BindFromInstance(cameraManager);
         BindFromInstance(gameManager);
         BindFromInstance(objectPooler);

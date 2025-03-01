@@ -6,9 +6,17 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [SerializeField, BoxGroup("Settings")] private CameraManager.CameraType cameraType;
+    public enum CameraType
+    {
+        IntroCamera,
+        GameplayCamera,
+        WinCamera,
+        FailCamera
+    }
+
+    [SerializeField, BoxGroup("Settings")] private CameraType cameraType;
 
     [SerializeField, Foldout("Setup")] private CinemachineVirtualCamera virtualCamera;
 
-    public CameraManager.CameraType CameraType => cameraType;
+    public CameraType Type => cameraType;
 }

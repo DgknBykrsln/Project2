@@ -1,18 +1,51 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using NaughtyAttributes;
 using UnityEngine;
+using Zenject;
 
 public class UiManager : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField] private List<UiPanel> uiPanels;
+
+    [Inject]
+    private void Construct()
     {
-        
+        GameManager.OnGameStateChange += OnGameStateChange;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnDestroy()
     {
-        
+        GameManager.OnGameStateChange -= OnGameStateChange;
+    }
+
+    private void OnGameStateChange(GameManager.GameStates gameState)
+    {
+        switch (gameState)
+        {
+            case GameManager.GameStates.MainMenu:
+                ChangePanel(UiPanel.PanelType.MainMenu);
+                break;
+            case GameManager.GameStates.Gameplay:
+                ChangePanel(UiPanel.PanelType.Gameplay);
+                break;
+            case GameManager.GameStates.LevelCompleted:
+                ChangePanel(UiPanel.PanelType.Win);
+                break;
+            case GameManager.GameStates.GameOver:
+                ChangePanel(UiPanel.PanelType.Fail);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
+        }
+    }
+
+    private void ChangePanel(UiPanel.PanelType panelType)
+    {
+        foreach (var panel in uiPanels)
+        {
+            panel.gameObject.SetActive(panel.Type == panelType);
+        }
     }
 }
