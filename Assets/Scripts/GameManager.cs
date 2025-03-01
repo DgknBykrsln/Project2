@@ -14,11 +14,9 @@ public class GameManager : MonoBehaviour
         LevelCompleted
     }
 
-    public static UnityAction OnGameStarted, OnGameSceneLoad;
-    public static UnityAction OnGameOver, OnLevelComplete;
     public static UnityAction<GameStates> OnGameStateChange;
 
-    private GameStates currentState = GameStates.MainMenu;
+    private GameStates currentState;
 
     public GameStates CurrentState
     {
@@ -33,26 +31,21 @@ public class GameManager : MonoBehaviour
     [Inject]
     private void Construct()
     {
-        OnGameSceneLoad?.Invoke();
+        CurrentState = GameStates.MainMenu;
     }
 
     public void GameStarted()
     {
-        OnGameStarted?.Invoke();
         CurrentState = GameStates.Gameplay;
-
-        //CameraManager.ChangeCamera(CameraType.Gameplay);
     }
 
     public void GameOver()
     {
-        OnGameOver?.Invoke();
         CurrentState = GameStates.GameOver;
     }
 
     public void LevelCompleted()
     {
-        OnLevelComplete?.Invoke();
         CurrentState = GameStates.LevelCompleted;
     }
 }
