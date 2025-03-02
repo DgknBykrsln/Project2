@@ -1,15 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using NaughtyAttributes;
 using UnityEngine;
 using Zenject;
 
 public class Player : MonoBehaviour
 {
+    [SerializeField, BoxGroup("Settings")] private float moveSpeed;
+
     [SerializeField, Foldout("Setup")] private PlayerAnimationController animationController;
 
-    public enum PlayerStates
+    public enum PlayerState
     {
         Intro,
         Stay,
@@ -18,14 +21,16 @@ public class Player : MonoBehaviour
         Fail
     }
 
-    private StateMachine<Player, PlayerStates> stateMachine;
+    private StateMachine<Player, PlayerState> stateMachine;
+    private StackManager stackManager;
 
     [Inject]
-    private void Construct(StateMachine<Player, PlayerStates> _stateMachine)
+    private void Construct(StateMachine<Player, PlayerState> _stateMachine, StackManager _stackManager)
     {
+        stackManager = _stackManager;
         stateMachine = _stateMachine;
         stateMachine.Initialize(this);
-        stateMachine.ChangeState(PlayerStates.Intro);
+        stateMachine.ChangeState(PlayerState.Intro);
         GameManager.OnGameStateChange += OnGameStateChange;
     }
 
@@ -74,9 +79,14 @@ public class Player : MonoBehaviour
 
     #region MovePath
 
+    private Tween moveTween;
+
     private void MovePathEnter()
     {
         animationController.Run();
+
+        StackManager.StackPlaced += OnStackPlaced;
+        OnStackPlaced();
     }
 
     private void MovePathExecute()
@@ -85,6 +95,15 @@ public class Player : MonoBehaviour
 
     private void MovePathExit()
     {
+        StackManager.StackPlaced -= OnStackPlaced;
+    }
+
+    private void OnStackPlaced()
+    {
+        var pathPoints = stackManager.GetMovePath(transform.position);
+
+        moveTween?.Kill();
+        moveTween = transform.DOPath(pathPoints, moveSpeed).SetSpeedBased().SetEase(Ease.Linear);
     }
 
     #endregion
@@ -129,16 +148,16 @@ public class Player : MonoBehaviour
         switch (gameState)
         {
             case GameManager.GameStates.MainMenu:
-                stateMachine.ChangeState(PlayerStates.Intro);
+                stateMachine.ChangeState(PlayerState.Intro);
                 break;
             case GameManager.GameStates.Gameplay:
-                stateMachine.ChangeState(PlayerStates.MovePath);
+                stateMachine.ChangeState(PlayerState.MovePath);
                 break;
             case GameManager.GameStates.LevelCompleted:
-                stateMachine.ChangeState(PlayerStates.Win);
+                stateMachine.ChangeState(PlayerState.Win);
                 break;
             case GameManager.GameStates.GameOver:
-                stateMachine.ChangeState(PlayerStates.Fail);
+                stateMachine.ChangeState(PlayerState.Fail);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);

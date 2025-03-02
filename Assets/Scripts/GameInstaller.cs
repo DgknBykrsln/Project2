@@ -11,15 +11,24 @@ public class GameInstaller : MonoInstaller
     [SerializeField, Foldout("Setup")] private CameraManager cameraManager;
     [SerializeField, Foldout("Setup")] private UiManager uiManager;
     [SerializeField, Foldout("Setup")] private ObjectPooler objectPooler;
+    [SerializeField, Foldout("Setup")] private StackMaterialHolder stackMaterialHolder;
+    [SerializeField, Foldout("Setup")] private LevelManager levelManager;
+    [SerializeField, Foldout("Setup")] private StackManager stackManager;
+    [SerializeField, Foldout("Setup")] private Player player;
 
     public override void InstallBindings()
     {
-        BindStateMachine<Player, Player.PlayerStates>();
+        BindStateMachine<Player, Player.PlayerState>();
+        BindStateMachine<Stack, Stack.StackState>();
 
+        BindFromInstance(player);
+        BindFromInstance(stackManager);
+        BindFromInstance(levelManager);
         BindFromInstance(uiManager);
         BindFromInstance(cameraManager);
         BindFromInstance(gameManager);
         BindFromInstance(objectPooler);
+        BindFromInstance(stackMaterialHolder);
     }
 
     private void BindStateMachine<T, TState>() where T : MonoBehaviour where TState : struct, Enum
