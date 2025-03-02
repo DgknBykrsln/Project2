@@ -20,9 +20,10 @@ public class UiPanel : MonoBehaviour
 
     [SerializeField, Foldout("Setup")] private CanvasGroup canvasGroup;
 
+    [SerializeField] private List<UiElement> uiElements;
+
     public PanelType Type => panelType;
 
-    private Coroutine fadeRoutine;
 
     [Inject]
     private void Construct()
@@ -31,38 +32,25 @@ public class UiPanel : MonoBehaviour
         canvasGroup.interactable = false;
     }
 
-    private IEnumerator FadeOutRoutine(float delay)
+    public IEnumerator FadeOutRoutine(float duration)
     {
         canvasGroup.interactable = false;
-        yield return canvasGroup.DOFade(0, delay).WaitForCompletion();
-    }
+        yield return canvasGroup.DOFade(0, duration).WaitForCompletion();
 
-    private IEnumerator FadeInRoutine(float delay)
-    {
-        yield return canvasGroup.DOFade(1, delay).WaitForCompletion();
-        canvasGroup.interactable = true;
-    }
-
-    private void StopFadeRoutine()
-    {
-        if (fadeRoutine != null)
+        foreach (var uiElement in uiElements)
         {
-            StopCoroutine(fadeRoutine);
+            uiElement.Disappear();
         }
     }
 
-    public void FadeIn(float delay)
+    public IEnumerator FadeInRoutine(float duration)
     {
-        StopFadeRoutine();
+        foreach (var uiElement in uiElements)
+        {
+            uiElement.Appear();
+        }
 
-        fadeRoutine = StartCoroutine(FadeInRoutine(delay));
-    }
-
-
-    public void FadeOut(float delay)
-    {
-        StopFadeRoutine();
-
-        fadeRoutine = StartCoroutine(FadeOutRoutine(delay));
+        yield return canvasGroup.DOFade(1, duration).WaitForCompletion();
+        canvasGroup.interactable = true;
     }
 }
