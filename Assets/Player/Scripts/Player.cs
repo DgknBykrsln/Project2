@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NaughtyAttributes;
@@ -25,6 +26,12 @@ public class Player : MonoBehaviour
         stateMachine = _stateMachine;
         stateMachine.Initialize(this);
         stateMachine.ChangeState(PlayerStates.Intro);
+        GameManager.OnGameStateChange += OnGameStateChange;
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.OnGameStateChange -= OnGameStateChange;
     }
 
     private void Update()
@@ -111,6 +118,31 @@ public class Player : MonoBehaviour
 
     private void FailExit()
     {
+    }
+
+    #endregion
+
+    #region Methods
+
+    private void OnGameStateChange(GameManager.GameStates gameState)
+    {
+        switch (gameState)
+        {
+            case GameManager.GameStates.MainMenu:
+                stateMachine.ChangeState(PlayerStates.Intro);
+                break;
+            case GameManager.GameStates.Gameplay:
+                stateMachine.ChangeState(PlayerStates.MovePath);
+                break;
+            case GameManager.GameStates.LevelCompleted:
+                stateMachine.ChangeState(PlayerStates.Win);
+                break;
+            case GameManager.GameStates.GameOver:
+                stateMachine.ChangeState(PlayerStates.Fail);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
+        }
     }
 
     #endregion
