@@ -27,6 +27,7 @@ public class Player : MonoBehaviour
     }
 
     public static Action PlayerFailed;
+    public static Action PlayerWon;
 
     private StateMachine<Player, PlayerState> stateMachine;
     private StackManager stackManager;
@@ -160,6 +161,7 @@ public class Player : MonoBehaviour
 
     private void WinEnter()
     {
+        PlayerWon?.Invoke();
         animationController.Dance();
     }
 
@@ -210,7 +212,8 @@ public class Player : MonoBehaviour
         failMoveTween = transform.DOMoveZ(zPos + stackManager.StackZLength * .25f, speedRange.x).SetSpeedBased();
 
         const float fallSpeed = 7f;
-        yield return jumpRoot.DOMoveY(-10, fallSpeed).SetEase(jumpCurve).SetSpeedBased().WaitForCompletion();
+        jumpRoot.DOMoveY(-10, fallSpeed).SetEase(jumpCurve).SetSpeedBased();
+        yield return new WaitForSeconds(1.1f);
         PlayerFailed?.Invoke();
         failMoveTween?.Kill();
         visual.gameObject.SetActive(false);
@@ -229,9 +232,6 @@ public class Player : MonoBehaviour
                 break;
             case GameManager.GameState.Gameplay:
                 stateMachine.ChangeState(PlayerState.MovePath);
-                break;
-            case GameManager.GameState.LevelCompleted:
-                stateMachine.ChangeState(PlayerState.Win);
                 break;
         }
     }

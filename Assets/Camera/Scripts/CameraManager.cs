@@ -12,6 +12,8 @@ public class CameraManager : MonoBehaviour
 
     [SerializeField] private List<CameraController> cameras;
 
+    public static float TransitionDuration => 1f;
+
     [Inject]
     private void Construct()
     {

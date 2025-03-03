@@ -34,11 +34,13 @@ public class GameManager : MonoBehaviour
     {
         CurrentState = GameState.MainMenu;
         Player.PlayerFailed += GameOver;
+        Player.PlayerWon += LevelCompleted;
     }
 
     private void OnDestroy()
     {
         Player.PlayerFailed -= GameOver;
+        Player.PlayerWon -= LevelCompleted;
     }
 
     public void GameStarted()

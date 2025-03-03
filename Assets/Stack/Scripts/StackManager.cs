@@ -178,9 +178,19 @@ public class StackManager : MonoBehaviour
 
         EnsureStackCapacity(targetStackAmount);
 
+
         for (var i = 0; i < targetStackAmount; i++)
         {
             var stack = stacks[i];
+
+            if (stack is StackFinish)
+            {
+                stacks.RemoveAt(i);
+                objectPooler.SendObjectToPool(stack);
+                stack = objectPooler.GetObjectFromPool<Stack>();
+                stacks.Insert(i, stack);
+            }
+
             var material = stackMaterialHolder.GetMaterial(i);
             stack.Prepare(transform, targetZ, material, moveDistance, stackZLength, stackXLength);
             targetZ += stackZLength;
