@@ -12,6 +12,7 @@ public class PlayerAnimationController : MonoBehaviour
     private static readonly int stayKey = Animator.StringToHash("Stay");
     private static readonly int danceKey = Animator.StringToHash("Dance");
     private static readonly int runKey = Animator.StringToHash("Run");
+    private static readonly int jumpKey = Animator.StringToHash("Jump");
     private static readonly int runSpeedKey = Animator.StringToHash("RunSpeed");
 
     public void Stay()
@@ -28,6 +29,11 @@ public class PlayerAnimationController : MonoBehaviour
     {
         var speed = Mathf.Lerp(runSpeedRange.x, runSpeedRange.y, speedRatio);
         animator.SetFloat(runSpeedKey, speed);
+    }
+
+    public void Jump()
+    {
+        animator.SetTrigger(jumpKey);
     }
 
     public void Dance()

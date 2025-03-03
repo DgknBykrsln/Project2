@@ -26,6 +26,8 @@ public class StackManager : MonoBehaviour
     public static Action StackPlaced;
 
     public StackManagerState StackState => stackManagerState;
+    
+    public float StackZLength => stackZLength;
 
     private Stack currentMovingStack => stacks[currentMovingStackIndex];
     private Stack previousMovingStack => stacks[currentMovingStackIndex - 1];
@@ -83,9 +85,7 @@ public class StackManager : MonoBehaviour
         var overlap = CalculateOverlap(previousXLength, previousXPosition, currentXPosition);
         if (overlap <= 0)
         {
-            currentMovingStack.Close();
-            SpawnStackDrop(currentMovingStack.transform.position, currentMovingStack.XLenght);
-            stackManagerState = StackManagerState.Fail;
+            Fail();
             StackPlaced?.Invoke();
             return;
         }
@@ -242,5 +242,12 @@ public class StackManager : MonoBehaviour
         }
 
         return pathPoints.ToArray();
+    }
+
+    public void Fail()
+    {
+        currentMovingStack.Close();
+        SpawnStackDrop(currentMovingStack.transform.position, currentMovingStack.XLenght);
+        stackManagerState = StackManagerState.Fail;
     }
 }

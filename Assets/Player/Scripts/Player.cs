@@ -8,10 +8,13 @@ using Zenject;
 
 public class Player : MonoBehaviour
 {
+    [SerializeField, BoxGroup("Settings")] private AnimationCurve jumpCurve;
+
     [SerializeField, BoxGroup("Settings")] private float speedDivisor;
     [SerializeField, BoxGroup("Settings")] private float finishSpeed;
     [SerializeField, BoxGroup("Settings")] private Vector2 speedRange;
 
+    [SerializeField, Foldout("Setup")] private Transform jumpRoot;
     [SerializeField, Foldout("Setup")] private PlayerAnimationController animationController;
 
     public enum PlayerState
@@ -151,6 +154,12 @@ public class Player : MonoBehaviour
             case StackManager.StackManagerState.Fail:
                 stateMachine.ChangeState(PlayerState.Fail);
                 break;
+            case StackManager.StackManagerState.Gameplay:
+                stateMachine.ChangeState(PlayerState.Fail);
+                stackManager.Fail();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(stackState), stackState, null);
         }
     }
 
@@ -175,8 +184,17 @@ public class Player : MonoBehaviour
 
     #region Fail
 
+    private Tween jumpTween;
+    private Coroutine failCoroutine;
+
     private void FailEnter()
     {
+        if (failCoroutine != null)
+        {
+            StopCoroutine(failCoroutine);
+        }
+
+        failCoroutine = StartCoroutine(FailRoutine());
     }
 
     private void FailExecute()
@@ -185,6 +203,20 @@ public class Player : MonoBehaviour
 
     private void FailExit()
     {
+    }
+
+    private IEnumerator FailRoutine()
+    {
+        var zPos = transform.position.z;
+        animationController.SetRunSpeed(0f);
+        yield return transform.DOMoveZ(zPos + stackManager.StackZLength * .4f, speedRange.x).SetSpeedBased().WaitForCompletion();
+        animationController.Jump();
+        yield return new WaitForSeconds(.25f);
+        zPos = transform.position.z;
+        transform.DOMoveZ(zPos + stackManager.StackZLength * .25f, speedRange.x).SetSpeedBased();
+
+        const float fallSpeed = 5f;
+        yield return jumpRoot.DOMoveY(-5, fallSpeed).SetEase(jumpCurve).SetSpeedBased().WaitForCompletion();
     }
 
     #endregion
