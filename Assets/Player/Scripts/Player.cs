@@ -29,6 +29,8 @@ public class Player : MonoBehaviour
     private StateMachine<Player, PlayerState> stateMachine;
     private StackManager stackManager;
 
+    public static Action PlayerFailed;
+
     [Inject]
     private void Construct(StateMachine<Player, PlayerState> _stateMachine, StackManager _stackManager)
     {
@@ -100,6 +102,7 @@ public class Player : MonoBehaviour
 
     private void MovePathExit()
     {
+        moveTween?.Kill();
         StackManager.StackPlaced -= OnStackPlaced;
     }
 
@@ -185,6 +188,7 @@ public class Player : MonoBehaviour
     #region Fail
 
     private Tween jumpTween;
+    private Tween failMoveTween;
     private Coroutine failCoroutine;
 
     private void FailEnter()
@@ -209,14 +213,18 @@ public class Player : MonoBehaviour
     {
         var zPos = transform.position.z;
         animationController.SetRunSpeed(0f);
-        yield return transform.DOMoveZ(zPos + stackManager.StackZLength * .4f, speedRange.x).SetSpeedBased().WaitForCompletion();
+        failMoveTween = transform.DOMoveZ(zPos + stackManager.StackZLength * .4f, speedRange.x).SetSpeedBased();
+        yield return failMoveTween.WaitForCompletion();
+
         animationController.Jump();
         yield return new WaitForSeconds(.25f);
         zPos = transform.position.z;
-        transform.DOMoveZ(zPos + stackManager.StackZLength * .25f, speedRange.x).SetSpeedBased();
+        failMoveTween = transform.DOMoveZ(zPos + stackManager.StackZLength * .25f, speedRange.x).SetSpeedBased();
 
         const float fallSpeed = 5f;
         yield return jumpRoot.DOMoveY(-5, fallSpeed).SetEase(jumpCurve).SetSpeedBased().WaitForCompletion();
+        PlayerFailed?.Invoke();
+        failMoveTween?.Kill();
     }
 
     #endregion
@@ -236,11 +244,6 @@ public class Player : MonoBehaviour
             case GameManager.GameStates.LevelCompleted:
                 stateMachine.ChangeState(PlayerState.Win);
                 break;
-            case GameManager.GameStates.GameOver:
-                stateMachine.ChangeState(PlayerState.Fail);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
         }
     }
 

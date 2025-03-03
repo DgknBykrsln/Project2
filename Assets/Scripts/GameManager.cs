@@ -32,6 +32,12 @@ public class GameManager : MonoBehaviour
     private void Construct()
     {
         CurrentState = GameStates.MainMenu;
+        Player.PlayerFailed += GameOver;
+    }
+
+    private void OnDestroy()
+    {
+        Player.PlayerFailed -= GameOver;
     }
 
     public void GameStarted()
@@ -43,6 +49,11 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
         CurrentState = GameStates.Gameplay;
+    }
+
+    public void MainMenu()
+    {
+        CurrentState = GameStates.MainMenu;
     }
 
     public void GameOver()
