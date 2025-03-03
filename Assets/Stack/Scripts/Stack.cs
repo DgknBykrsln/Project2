@@ -28,6 +28,8 @@ public class Stack : Poolable
     public Transform MidPoint => midPoint;
 
     public StackState State => stateMachine.CurrentState;
+    public float XLenght => targetScale.x;
+    public Material Material => meshRenderer.material;
 
     private StateMachine<Stack, StackState> stateMachine;
 
@@ -41,20 +43,24 @@ public class Stack : Poolable
     [Inject]
     private void Construct(StateMachine<Stack, StackState> _stateMachine)
     {
-        transform.localScale = Vector3.zero;
         stateMachine = _stateMachine;
         stateMachine.Initialize(this);
         stateMachine.ChangeState(StackState.Intro);
     }
 
-    public void Prepare(Transform parent, float zPosition, Material material, float _targetScale, float _moveDistance)
+    public void Prepare(Transform parent, float zPosition, Material material, float _moveDistance, float targetZScale, float targetXScale)
     {
         moveDistance = _moveDistance;
-        targetScale = new Vector3(_targetScale, 1, _targetScale);
-        transform.SetParent(parent);
-        transform.localPosition = new Vector3(0, 0, zPosition);
+        targetScale = new Vector3(targetXScale, 1, targetZScale);
+        Prepare(parent, zPosition);
         transform.localScale = targetScale;
         meshRenderer.material = material;
+    }
+
+    public void Prepare(Transform parent, float zPosition)
+    {
+        transform.SetParent(parent);
+        transform.localPosition = new Vector3(0, 0, zPosition);
     }
 
     private void Update()
@@ -122,6 +128,8 @@ public class Stack : Poolable
 
     private void MovingExit()
     {
+        moveTween?.Kill();
+        scaleTween?.Kill();
     }
 
     #endregion
@@ -161,8 +169,9 @@ public class Stack : Poolable
 
     #region Methods
 
-    public void Move(StackMoveDirection _moveDirection, float _moveSpeed)
+    public void Move(StackMoveDirection _moveDirection, float _moveSpeed, float xScale)
     {
+        targetScale = new Vector3(xScale, 1, targetScale.z);
         moveSpeed = _moveSpeed;
         moveDirection = _moveDirection;
         stateMachine.ChangeState(StackState.Moving);
@@ -171,6 +180,14 @@ public class Stack : Poolable
     public void Close()
     {
         stateMachine.ChangeState(StackState.Closed);
+    }
+
+    public void Place(float xScale, float xPosition)
+    {
+        transform.localPosition = new Vector3(xPosition, transform.localPosition.y, transform.localPosition.z);
+        targetScale = new Vector3(xScale, 1, targetScale.z);
+        transform.localScale = targetScale;
+        Place();
     }
 
     public void Place()

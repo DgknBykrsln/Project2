@@ -8,7 +8,7 @@ using Zenject;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField, BoxGroup("Settings")] private float moveSpeed;
+    [SerializeField, BoxGroup("Settings")] private float speedDivisor;
 
     [SerializeField, Foldout("Setup")] private PlayerAnimationController animationController;
 
@@ -98,12 +98,33 @@ public class Player : MonoBehaviour
         StackManager.StackPlaced -= OnStackPlaced;
     }
 
+    private static float GetPathLength(Vector3[] pathPoints)
+    {
+        var totalLength = 0f;
+
+        for (var i = 1; i < pathPoints.Length; i++)
+        {
+            totalLength += Vector3.Distance(pathPoints[i - 1], pathPoints[i]);
+        }
+
+        return totalLength;
+    }
+
+
     private void OnStackPlaced()
     {
         var pathPoints = stackManager.GetMovePath(transform.position);
+        var pathLength = GetPathLength(pathPoints);
+        var targetMoveSpeed = pathLength / speedDivisor;
 
         moveTween?.Kill();
-        moveTween = transform.DOPath(pathPoints, moveSpeed).SetSpeedBased().SetEase(Ease.Linear);
+        moveTween = transform.DOPath(pathPoints, targetMoveSpeed).SetSpeedBased().SetEase(Ease.Linear).OnComplete(() =>
+        {
+            if (stackManager.IsReachedFinish)
+            {
+                stateMachine.ChangeState(PlayerState.Win);
+            }
+        });
     }
 
     #endregion

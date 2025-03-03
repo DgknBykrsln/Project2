@@ -17,6 +17,7 @@ public class PlayerFollower : MonoBehaviour
     private void Update()
     {
         var position = player.transform.position;
+        position.x = 0;
         transform.position = position;
     }
 }

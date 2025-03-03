@@ -7,28 +7,34 @@ using Zenject;
 
 public class StackManager : MonoBehaviour
 {
+    [SerializeField, BoxGroup("Settings")] private int openStartAmount;
     [SerializeField, BoxGroup("Settings")] private float moveSpeed;
     [SerializeField, BoxGroup("Settings")] private float moveDistance;
-    [SerializeField, BoxGroup("Settings")] private float stackLength;
-    [SerializeField, BoxGroup("Settings")] private int openStartAmount;
+    [SerializeField, BoxGroup("Settings")] private float stackXLength;
+    [SerializeField, BoxGroup("Settings")] private float stackZLength;
+    [SerializeField, BoxGroup("Settings")] private float perfectPlacementOffset;
 
     [SerializeField, ReadOnly] private List<Stack> stacks;
 
     public static Action StackPlaced;
 
+    public bool IsReachedFinish => currentMovingStackIndex >= stacks.Count - 1;
+
     private Stack currentMovingStack => stacks[currentMovingStackIndex];
+    private Stack previousMovingStack => stacks[currentMovingStackIndex - 1];
 
     private LevelManager levelManager;
     private ObjectPooler objectPooler;
     private StackMaterialHolder stackMaterialHolder;
 
-    private int currentMovingStackIndex;
-
     private Stack.StackMoveDirection currentStackMoveDirection;
 
-    private Vector3[] pathPoints = new Vector3[100];
+    private readonly List<Vector3> pathPoints = new();
 
     private GameManager.GameStates currentGameState;
+
+    private int currentMovingStackIndex;
+    private float currentXLenght;
 
     [Inject]
     private void Construct(LevelManager _levelManager, ObjectPooler _objectPooler, StackMaterialHolder _stackMaterialHolder)
@@ -38,6 +44,7 @@ public class StackManager : MonoBehaviour
         stackMaterialHolder = _stackMaterialHolder;
         GameManager.OnGameStateChange += OnGameStateChange;
         currentStackMoveDirection = Stack.StackMoveDirection.Left;
+        currentXLenght = stackXLength;
     }
 
     private void OnDestroy()
@@ -49,18 +56,90 @@ public class StackManager : MonoBehaviour
     {
         if (currentGameState != GameManager.GameStates.Gameplay) return;
 
+        if (currentMovingStackIndex >= stacks.Count - 1) return;
+
         if (Input.GetMouseButtonDown(0))
         {
-            currentMovingStack.Place();
-            currentMovingStackIndex++;
-            MoveCurrentStack();
-            StackPlaced?.Invoke();
+            ProcessStackPlacement();
         }
+    }
+
+    private void ProcessStackPlacement()
+    {
+        var previousXLength = previousMovingStack.XLenght;
+        var previousXPosition = previousMovingStack.transform.position.x;
+        var currentXPosition = currentMovingStack.transform.position.x;
+
+        var overlap = CalculateOverlap(previousXLength, previousXPosition, currentXPosition);
+        if (overlap <= 0)
+        {
+            currentMovingStack.Close();
+            SpawnStackDrop(currentMovingStack.transform.position, currentMovingStack.XLenght);
+            return;
+        }
+
+        var cutoffLength = currentMovingStack.XLenght - overlap;
+
+        if (cutoffLength <= perfectPlacementOffset)
+        {
+            overlap = currentMovingStack.XLenght;
+            currentXPosition = previousXPosition;
+            cutoffLength = 0;
+        }
+
+        currentXLenght = overlap;
+
+        if (cutoffLength > 0)
+        {
+            HandleStackCutoff(previousXLength, previousXPosition, currentXPosition);
+        }
+
+        var targetXPosition = previousXPosition + (currentXPosition - previousXPosition) / 2;
+        currentMovingStack.Place(currentXLenght, targetXPosition);
+
+        currentMovingStackIndex++;
+
+        if (currentMovingStackIndex < stacks.Count - 1)
+        {
+            MoveCurrentStack();
+        }
+
+        StackPlaced?.Invoke();
+    }
+
+    private static float CalculateOverlap(float previousXLength, float previousXPosition, float currentXPosition)
+    {
+        return previousXLength - Mathf.Abs(previousXPosition - currentXPosition);
+    }
+
+    private void HandleStackCutoff(float previousXLength, float previousXPosition, float currentXPosition)
+    {
+        var cutoffLength = currentMovingStack.XLenght - currentXLenght;
+        if (cutoffLength <= 0) return;
+
+        var dropPosition = DetermineDropPosition(previousXLength, previousXPosition, currentXPosition, cutoffLength);
+        SpawnStackDrop(dropPosition, cutoffLength);
+    }
+
+    private Vector3 DetermineDropPosition(float previousXLength, float previousXPosition, float currentXPosition, float cutoffLength)
+    {
+        var dropXPosition = currentXPosition > previousXPosition
+            ? previousXPosition + previousXLength / 2 + cutoffLength / 2
+            : previousXPosition - previousXLength / 2 - cutoffLength / 2;
+
+        var movingStackPosition = currentMovingStack.transform.position;
+        return new Vector3(dropXPosition, movingStackPosition.y, movingStackPosition.z);
+    }
+
+    private void SpawnStackDrop(Vector3 position, float cutoffLength)
+    {
+        var stackDrop = objectPooler.GetObjectFromPool<StackDrop>();
+        stackDrop.Drop(position, new Vector3(cutoffLength, 1, stackZLength), currentMovingStack.Material);
     }
 
     private void MoveCurrentStack()
     {
-        currentMovingStack.Move(currentStackMoveDirection, moveSpeed);
+        currentMovingStack.Move(currentStackMoveDirection, moveSpeed, currentXLenght);
         SwitchMoveDirection();
     }
 
@@ -79,18 +158,20 @@ public class StackManager : MonoBehaviour
         var currentLevelData = levelManager.CurrentLevelData;
         var targetStackAmount = currentLevelData.StackAmount;
 
+        var targetZ = 0f;
+
         for (var i = 0; i < targetStackAmount; i++)
         {
             var stack = objectPooler.GetObjectFromPool<Stack>();
             stacks.Add(stack);
 
-            var targetZ = i * stackLength;
+            targetZ += stackZLength;
             var material = stackMaterialHolder.GetMaterial(i);
-            stack.Prepare(transform, targetZ, material, stackLength, moveDistance);
+            stack.Prepare(transform, targetZ, material, moveDistance, stackZLength, stackXLength);
 
             if (i < openStartAmount)
             {
-                stack.Place();
+                stack.Place(stackXLength, 0f);
                 currentMovingStackIndex++;
             }
             else
@@ -98,6 +179,13 @@ public class StackManager : MonoBehaviour
                 stack.Close();
             }
         }
+
+        targetZ += stackZLength;
+
+        var stackFinish = objectPooler.GetObjectFromPool<StackFinish>();
+        stacks.Add(stackFinish);
+        stackFinish.Prepare(transform, targetZ);
+        stackFinish.Place();
 
         MoveCurrentStack();
     }
@@ -111,30 +199,30 @@ public class StackManager : MonoBehaviour
 
     public Vector3[] GetMovePath(Vector3 position)
     {
-        var index = 0;
-        Array.Clear(pathPoints, 0, pathPoints.Length);
+        pathPoints.Clear();
 
-        foreach (var stack in stacks)
+        for (var i = 0; i < stacks.Count - 1; i++)
         {
+            var stack = stacks[i];
+
             if (stack.State == Stack.StackState.Placed)
             {
                 var midPoint = stack.MidPoint;
 
                 if (midPoint.position.z > position.z)
                 {
-                    if (index < pathPoints.Length)
-                    {
-                        pathPoints[index] = midPoint.position;
-                        index++;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    pathPoints.Add(midPoint.position);
                 }
             }
         }
 
-        return pathPoints;
+
+        if (stacks.Count > 1 && stacks[^2].State == Stack.StackState.Placed)
+        {
+            var finishStack = stacks[^1];
+            pathPoints.Add(finishStack.MidPoint.position);
+        }
+
+        return pathPoints.ToArray();
     }
 }
