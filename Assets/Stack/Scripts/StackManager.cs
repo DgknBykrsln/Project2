@@ -289,7 +289,7 @@ public class StackManager : MonoBehaviour
 
     public void Fail()
     {
-        currentMovingStack.Close();
+        currentMovingStack.CloseAndLoseCurrency();
         SpawnStackDrop(currentMovingStack.transform.position, currentMovingStack.XLenght);
         stackManagerState = StackManagerState.Fail;
     }

@@ -14,4 +14,24 @@ public static class SaveData
             set => PlayerPrefs.SetInt(CurrentLevelIndexKey, value);
         }
     }
+
+    public static class Currency
+    {
+        private const string CurrencyKey = "Currency";
+
+        private static string GetCurrencyKey(global::Currency.CurrencyType currencyType)
+        {
+            return CurrencyKey + "_" + currencyType + "_";
+        }
+
+        public static float GetCurrencyAmount(global::Currency.CurrencyType currencyType)
+        {
+            return PlayerPrefs.GetFloat(GetCurrencyKey(currencyType), 0);
+        }
+
+        public static void SetCurrencyAmount(global::Currency.CurrencyType currencyType, float amount)
+        {
+            PlayerPrefs.SetFloat(GetCurrencyKey(currencyType), amount);
+        }
+    }
 }

@@ -13,7 +13,6 @@ public class Stack : Poolable
         Closed,
         Moving,
         Placed,
-        Falling
     }
 
     public enum StackMoveDirection
@@ -21,6 +20,8 @@ public class Stack : Poolable
         Left,
         Right
     }
+
+    [Range(0, 1)] [SerializeField, BoxGroup("Settings")] private float currencyChance;
 
     [SerializeField, Foldout("Setup")] private MeshRenderer meshRenderer;
     [SerializeField, Foldout("Setup")] private List<Transform> stackPoints;
@@ -31,36 +32,26 @@ public class Stack : Poolable
     public float XLenght => targetScale.x;
     public Material Material => meshRenderer.material;
 
+    private Transform midPoint => stackPoints[^1];
+
+    private CurrencyManager currencyManager;
     private StateMachine<Stack, StackState> stateMachine;
 
     private StackMoveDirection moveDirection;
 
+    private Currency currency;
     private Vector3 targetScale;
 
     private float moveDistance;
     private float moveSpeed;
 
     [Inject]
-    private void Construct(StateMachine<Stack, StackState> _stateMachine)
+    private void Construct(StateMachine<Stack, StackState> _stateMachine, CurrencyManager _currencyManager)
     {
+        currencyManager = _currencyManager;
         stateMachine = _stateMachine;
         stateMachine.Initialize(this);
         stateMachine.ChangeState(StackState.Intro);
-    }
-
-    public void Prepare(Transform parent, float zPosition, Material material, float _moveDistance, float targetZScale, float targetXScale)
-    {
-        moveDistance = _moveDistance;
-        targetScale = new Vector3(targetXScale, 1, targetZScale);
-        Prepare(parent, zPosition);
-        transform.localScale = targetScale;
-        meshRenderer.material = material;
-    }
-
-    public void Prepare(Transform parent, float zPosition)
-    {
-        transform.SetParent(parent);
-        transform.localPosition = new Vector3(0, 0, zPosition);
     }
 
     private void Update()
@@ -151,30 +142,43 @@ public class Stack : Poolable
 
     #endregion
 
-    #region Falling
-
-    private void FallingEnter()
-    {
-    }
-
-    private void FallingExecute()
-    {
-    }
-
-    private void FallingExit()
-    {
-    }
-
-    #endregion
-
     #region Methods
+
+    public void Prepare(Transform parent, float zPosition, Material material, float _moveDistance, float targetZScale, float targetXScale)
+    {
+        moveDistance = _moveDistance;
+        targetScale = new Vector3(targetXScale, 1, targetZScale);
+        Prepare(parent, zPosition);
+        transform.localScale = targetScale;
+        meshRenderer.material = material;
+    }
+
+    public void Prepare(Transform parent, float zPosition)
+    {
+        transform.SetParent(parent);
+        transform.localPosition = new Vector3(0, 0, zPosition);
+    }
 
     public void Move(StackMoveDirection _moveDirection, float _moveSpeed, float xScale)
     {
+        var haveCurrency = Random.value < currencyChance;
+
+        if (haveCurrency)
+        {
+            currency = currencyManager.GetRandomCurrency();
+            currency.Prepare(midPoint);
+        }
+
         targetScale = new Vector3(xScale, 1, targetScale.z);
         moveSpeed = _moveSpeed;
         moveDirection = _moveDirection;
         stateMachine.ChangeState(StackState.Moving);
+    }
+
+    public void CloseAndLoseCurrency()
+    {
+        currency?.SendToPool();
+        Close();
     }
 
     public void Close()

@@ -39,7 +39,7 @@ public class UiManager : MonoBehaviour
         {
             case GameManager.GameState.MainMenu:
                 yield return ChangePanelRoutine(UiPanel.PanelType.Fade, true, true);
-                yield return ChangePanelRoutine(UiPanel.PanelType.MainMenu, false, false);
+                yield return ChangePanelRoutine(UiPanel.PanelType.MainMenu, false, true);
                 break;
             case GameManager.GameState.Gameplay:
                 yield return ChangePanelRoutine(UiPanel.PanelType.Gameplay, false, false);

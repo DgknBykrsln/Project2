@@ -141,6 +141,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3194fc5d69d3d4d64b1dbade41689645, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currencyChance: 0.6
   meshRenderer: {fileID: 2175902511878411675}
   stackPoints:
   - {fileID: 6664778972642152281}

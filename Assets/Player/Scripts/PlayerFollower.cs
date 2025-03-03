@@ -13,7 +13,6 @@ public class PlayerFollower : MonoBehaviour
     private Player player;
 
     private Tween rotationTween;
-    private Coroutine rotateCoroutine;
 
     [Inject]
     private void Construct(Player player)
@@ -41,25 +40,14 @@ public class PlayerFollower : MonoBehaviour
         {
             rotationTween.Kill();
             transform.rotation = Quaternion.identity;
-
-            if (rotateCoroutine != null)
-            {
-                StopCoroutine(rotateCoroutine);
-            }
         }
 
         if (gameState == GameManager.GameState.LevelCompleted)
         {
-            rotateCoroutine = StartCoroutine(RotateRoutine());
+            rotationTween = transform.DORotate(Vector3.up * 360f, rotateSpeed, RotateMode.FastBeyond360)
+                .SetEase(Ease.Linear)
+                .SetSpeedBased()
+                .SetLoops(-1, LoopType.Incremental);
         }
-    }
-
-    private IEnumerator RotateRoutine()
-    {
-        yield return new WaitForSeconds(CameraManager.TransitionDuration + .1f);
-        rotationTween = transform.DORotate(Vector3.up * 360f, rotateSpeed, RotateMode.FastBeyond360)
-            .SetEase(Ease.Linear)
-            .SetSpeedBased()
-            .SetLoops(-1, LoopType.Incremental);
     }
 }
