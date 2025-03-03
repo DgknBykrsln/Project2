@@ -7,6 +7,13 @@ using Zenject;
 
 public class StackManager : MonoBehaviour
 {
+    public enum StackManagerState
+    {
+        Gameplay,
+        Fail,
+        Win
+    }
+
     [SerializeField, BoxGroup("Settings")] private int openStartAmount;
     [SerializeField, BoxGroup("Settings")] private float moveSpeed;
     [SerializeField, BoxGroup("Settings")] private float moveDistance;
@@ -18,7 +25,7 @@ public class StackManager : MonoBehaviour
 
     public static Action StackPlaced;
 
-    public bool IsReachedFinish => currentMovingStackIndex >= stacks.Count - 1;
+    public StackManagerState StackState => stackManagerState;
 
     private Stack currentMovingStack => stacks[currentMovingStackIndex];
     private Stack previousMovingStack => stacks[currentMovingStackIndex - 1];
@@ -36,6 +43,8 @@ public class StackManager : MonoBehaviour
     private int currentMovingStackIndex;
     private float currentXLenght;
 
+    private StackManagerState stackManagerState;
+
     [Inject]
     private void Construct(LevelManager _levelManager, ObjectPooler _objectPooler, StackMaterialHolder _stackMaterialHolder)
     {
@@ -45,6 +54,7 @@ public class StackManager : MonoBehaviour
         GameManager.OnGameStateChange += OnGameStateChange;
         currentStackMoveDirection = Stack.StackMoveDirection.Left;
         currentXLenght = stackXLength;
+        stackManagerState = StackManagerState.Gameplay;
     }
 
     private void OnDestroy()
@@ -56,7 +66,7 @@ public class StackManager : MonoBehaviour
     {
         if (currentGameState != GameManager.GameStates.Gameplay) return;
 
-        if (currentMovingStackIndex >= stacks.Count - 1) return;
+        if (stackManagerState != StackManagerState.Gameplay) return;
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -75,6 +85,8 @@ public class StackManager : MonoBehaviour
         {
             currentMovingStack.Close();
             SpawnStackDrop(currentMovingStack.transform.position, currentMovingStack.XLenght);
+            stackManagerState = StackManagerState.Fail;
+            StackPlaced?.Invoke();
             return;
         }
 
@@ -102,6 +114,10 @@ public class StackManager : MonoBehaviour
         if (currentMovingStackIndex < stacks.Count - 1)
         {
             MoveCurrentStack();
+        }
+        else
+        {
+            stackManagerState = StackManagerState.Win;
         }
 
         StackPlaced?.Invoke();
@@ -165,9 +181,9 @@ public class StackManager : MonoBehaviour
             var stack = objectPooler.GetObjectFromPool<Stack>();
             stacks.Add(stack);
 
-            targetZ += stackZLength;
             var material = stackMaterialHolder.GetMaterial(i);
             stack.Prepare(transform, targetZ, material, moveDistance, stackZLength, stackXLength);
+            targetZ += stackZLength;
 
             if (i < openStartAmount)
             {
@@ -179,8 +195,6 @@ public class StackManager : MonoBehaviour
                 stack.Close();
             }
         }
-
-        targetZ += stackZLength;
 
         var stackFinish = objectPooler.GetObjectFromPool<StackFinish>();
         stacks.Add(stackFinish);
@@ -217,10 +231,14 @@ public class StackManager : MonoBehaviour
         }
 
 
-        if (stacks.Count > 1 && stacks[^2].State == Stack.StackState.Placed)
+        if (stackManagerState == StackManagerState.Win)
         {
             var finishStack = stacks[^1];
             pathPoints.Add(finishStack.MidPoint.position);
+        }
+
+        if (stackManagerState == StackManagerState.Fail)
+        {
         }
 
         return pathPoints.ToArray();

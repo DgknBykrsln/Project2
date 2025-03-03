@@ -36,6 +36,12 @@ public class GameManager : MonoBehaviour
 
     public void GameStarted()
     {
+        StartCoroutine(GateStartedRoutine());
+    }
+
+    private IEnumerator GateStartedRoutine()
+    {
+        yield return new WaitForEndOfFrame();
         CurrentState = GameStates.Gameplay;
     }
 

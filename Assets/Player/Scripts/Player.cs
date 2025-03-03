@@ -9,6 +9,8 @@ using Zenject;
 public class Player : MonoBehaviour
 {
     [SerializeField, BoxGroup("Settings")] private float speedDivisor;
+    [SerializeField, BoxGroup("Settings")] private float finishSpeed;
+    [SerializeField, BoxGroup("Settings")] private Vector2 speedRange;
 
     [SerializeField, Foldout("Setup")] private PlayerAnimationController animationController;
 
@@ -114,17 +116,42 @@ public class Player : MonoBehaviour
     private void OnStackPlaced()
     {
         var pathPoints = stackManager.GetMovePath(transform.position);
-        var pathLength = GetPathLength(pathPoints);
-        var targetMoveSpeed = pathLength / speedDivisor;
+        var targetMoveSpeed = CalculateTargetSpeed(pathPoints);
+
+        var speedRatio = Mathf.InverseLerp(speedRange.x, speedRange.y, targetMoveSpeed);
+        animationController.SetRunSpeed(speedRatio);
 
         moveTween?.Kill();
-        moveTween = transform.DOPath(pathPoints, targetMoveSpeed).SetSpeedBased().SetEase(Ease.Linear).OnComplete(() =>
+        moveTween = transform
+            .DOPath(pathPoints, targetMoveSpeed)
+            .SetSpeedBased()
+            .SetEase(Ease.Linear)
+            .OnComplete(() => HandleStateChange(stackManager.StackState));
+    }
+
+    private float CalculateTargetSpeed(Vector3[] pathPoints)
+    {
+        var pathLength = GetPathLength(pathPoints);
+        var speed = pathLength / speedDivisor;
+
+        var isWin = stackManager.StackState == StackManager.StackManagerState.Win;
+
+        speed = isWin ? finishSpeed : Mathf.Clamp(speed, speedRange.x, speedRange.y);
+
+        return speed;
+    }
+
+    private void HandleStateChange(StackManager.StackManagerState stackState)
+    {
+        switch (stackState)
         {
-            if (stackManager.IsReachedFinish)
-            {
+            case StackManager.StackManagerState.Win:
                 stateMachine.ChangeState(PlayerState.Win);
-            }
-        });
+                break;
+            case StackManager.StackManagerState.Fail:
+                stateMachine.ChangeState(PlayerState.Fail);
+                break;
+        }
     }
 
     #endregion
