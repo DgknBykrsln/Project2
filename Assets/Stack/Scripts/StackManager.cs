@@ -26,7 +26,7 @@ public class StackManager : MonoBehaviour
     public static Action StackPlaced;
 
     public StackManagerState StackState => stackManagerState;
-    
+
     public float StackZLength => stackZLength;
 
     private Stack currentMovingStack => stacks[currentMovingStackIndex];
@@ -40,7 +40,7 @@ public class StackManager : MonoBehaviour
 
     private readonly List<Vector3> pathPoints = new();
 
-    private GameManager.GameStates currentGameState;
+    private GameManager.GameState currentGameState;
 
     private int currentMovingStackIndex;
     private float currentXLenght;
@@ -54,9 +54,6 @@ public class StackManager : MonoBehaviour
         levelManager = _levelManager;
         stackMaterialHolder = _stackMaterialHolder;
         GameManager.OnGameStateChange += OnGameStateChange;
-        currentStackMoveDirection = Stack.StackMoveDirection.Left;
-        currentXLenght = stackXLength;
-        stackManagerState = StackManagerState.Gameplay;
     }
 
     private void OnDestroy()
@@ -66,7 +63,7 @@ public class StackManager : MonoBehaviour
 
     private void Update()
     {
-        if (currentGameState != GameManager.GameStates.Gameplay) return;
+        if (currentGameState != GameManager.GameState.Gameplay) return;
 
         if (stackManagerState != StackManagerState.Gameplay) return;
 
@@ -159,12 +156,16 @@ public class StackManager : MonoBehaviour
         SwitchMoveDirection();
     }
 
-    private void OnGameStateChange(GameManager.GameStates gameState)
+    private void OnGameStateChange(GameManager.GameState gameState)
     {
         currentGameState = gameState;
 
-        if (gameState == GameManager.GameStates.MainMenu)
+        if (gameState == GameManager.GameState.MainMenu)
         {
+            stackManagerState = StackManagerState.Gameplay;
+            currentStackMoveDirection = Stack.StackMoveDirection.Left;
+            currentXLenght = stackXLength;
+            currentMovingStackIndex = 0;
             CreateStacks();
         }
     }
@@ -173,14 +174,13 @@ public class StackManager : MonoBehaviour
     {
         var currentLevelData = levelManager.CurrentLevelData;
         var targetStackAmount = currentLevelData.StackAmount;
-
         var targetZ = 0f;
+
+        EnsureStackCapacity(targetStackAmount);
 
         for (var i = 0; i < targetStackAmount; i++)
         {
-            var stack = objectPooler.GetObjectFromPool<Stack>();
-            stacks.Add(stack);
-
+            var stack = stacks[i];
             var material = stackMaterialHolder.GetMaterial(i);
             stack.Prepare(transform, targetZ, material, moveDistance, stackZLength, stackXLength);
             targetZ += stackZLength;
@@ -196,13 +196,42 @@ public class StackManager : MonoBehaviour
             }
         }
 
-        var stackFinish = objectPooler.GetObjectFromPool<StackFinish>();
-        stacks.Add(stackFinish);
-        stackFinish.Prepare(transform, targetZ);
-        stackFinish.Place();
-
+        SetupStackFinish(targetStackAmount, targetZ);
         MoveCurrentStack();
     }
+
+    private void EnsureStackCapacity(int targetStackAmount)
+    {
+        while (stacks.Count < targetStackAmount)
+        {
+            stacks.Add(objectPooler.GetObjectFromPool<Stack>());
+        }
+
+        while (stacks.Count > targetStackAmount)
+        {
+            objectPooler.SendObjectToPool(stacks[^1]);
+            stacks.RemoveAt(stacks.Count - 1);
+        }
+    }
+
+    private void SetupStackFinish(int targetStackAmount, float targetZ)
+    {
+        StackFinish stackFinish;
+
+        if (stacks.Count > targetStackAmount && stacks[^1] is StackFinish existingFinish)
+        {
+            stackFinish = existingFinish;
+        }
+        else
+        {
+            stackFinish = objectPooler.GetObjectFromPool<StackFinish>();
+            stacks.Add(stackFinish);
+        }
+
+        stackFinish.Prepare(transform, targetZ);
+        stackFinish.Place();
+    }
+
 
     private void SwitchMoveDirection()
     {
@@ -221,11 +250,12 @@ public class StackManager : MonoBehaviour
 
             if (stack.State == Stack.StackState.Placed)
             {
-                var midPoint = stack.MidPoint;
-
-                if (midPoint.position.z > position.z)
+                foreach (var stackPoint in stack.StackPoints)
                 {
-                    pathPoints.Add(midPoint.position);
+                    if (stackPoint.position.z > position.z)
+                    {
+                        pathPoints.Add(stackPoint.position);
+                    }
                 }
             }
         }
@@ -234,7 +264,10 @@ public class StackManager : MonoBehaviour
         if (stackManagerState == StackManagerState.Win)
         {
             var finishStack = stacks[^1];
-            pathPoints.Add(finishStack.MidPoint.position);
+            foreach (var stackPoint in finishStack.StackPoints)
+            {
+                pathPoints.Add(stackPoint.position);
+            }
         }
 
         if (stackManagerState == StackManagerState.Fail)

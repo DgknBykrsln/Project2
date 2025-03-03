@@ -77,7 +77,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshRenderer: {fileID: 0}
-  midPoint: {fileID: 3151835383890276685}
+  stackPoints:
+  - {fileID: 3151835383890276685}
 --- !u!1 &3151835384453053091
 GameObject:
   m_ObjectHideFlags: 0

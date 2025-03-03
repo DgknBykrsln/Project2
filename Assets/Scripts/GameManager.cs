@@ -6,19 +6,20 @@ using Zenject;
 
 public class GameManager : MonoBehaviour
 {
-    public enum GameStates
+    public enum GameState
     {
         MainMenu,
         Gameplay,
         GameOver,
-        LevelCompleted
+        LevelCompleted,
+        PrepareLevel
     }
 
-    public static UnityAction<GameStates> OnGameStateChange;
+    public static UnityAction<GameState> OnGameStateChange;
 
-    private GameStates currentState;
+    private GameState currentState;
 
-    public GameStates CurrentState
+    public GameState CurrentState
     {
         get => currentState;
         set
@@ -31,7 +32,7 @@ public class GameManager : MonoBehaviour
     [Inject]
     private void Construct()
     {
-        CurrentState = GameStates.MainMenu;
+        CurrentState = GameState.MainMenu;
         Player.PlayerFailed += GameOver;
     }
 
@@ -48,21 +49,28 @@ public class GameManager : MonoBehaviour
     private IEnumerator GateStartedRoutine()
     {
         yield return new WaitForEndOfFrame();
-        CurrentState = GameStates.Gameplay;
+        CurrentState = GameState.Gameplay;
     }
 
-    public void MainMenu()
+    private IEnumerator PrepareLevelRoutine()
     {
-        CurrentState = GameStates.MainMenu;
+        CurrentState = GameState.PrepareLevel;
+        yield return new WaitUntil(() => UiManager.IsReady);
+        CurrentState = GameState.MainMenu;
+    }
+
+    public void PrepareLevel()
+    {
+        StartCoroutine(PrepareLevelRoutine());
     }
 
     public void GameOver()
     {
-        CurrentState = GameStates.GameOver;
+        CurrentState = GameState.GameOver;
     }
 
     public void LevelCompleted()
     {
-        CurrentState = GameStates.LevelCompleted;
+        CurrentState = GameState.LevelCompleted;
     }
 }

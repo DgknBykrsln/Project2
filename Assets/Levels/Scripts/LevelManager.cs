@@ -28,9 +28,9 @@ public class LevelManager : MonoBehaviour
         GameManager.OnGameStateChange -= OnGameStateChange;
     }
 
-    private void OnGameStateChange(GameManager.GameStates gameState)
+    private static void OnGameStateChange(GameManager.GameState gameState)
     {
-        if (gameState == GameManager.GameStates.LevelCompleted)
+        if (gameState == GameManager.GameState.LevelCompleted)
         {
             IncreaseLevel();
         }

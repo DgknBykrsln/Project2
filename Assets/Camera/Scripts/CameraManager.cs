@@ -23,24 +23,22 @@ public class CameraManager : MonoBehaviour
         GameManager.OnGameStateChange -= OnGameStateChange;
     }
 
-    private void OnGameStateChange(GameManager.GameStates gameState)
+    private void OnGameStateChange(GameManager.GameState gameState)
     {
         switch (gameState)
         {
-            case GameManager.GameStates.MainMenu:
+            case GameManager.GameState.MainMenu:
                 ChangeCamera(CameraController.CameraType.IntroCamera);
                 break;
-            case GameManager.GameStates.Gameplay:
+            case GameManager.GameState.Gameplay:
                 ChangeCamera(CameraController.CameraType.GameplayCamera);
                 break;
-            case GameManager.GameStates.LevelCompleted:
+            case GameManager.GameState.LevelCompleted:
                 ChangeCamera(CameraController.CameraType.WinCamera);
                 break;
-            case GameManager.GameStates.GameOver:
+            case GameManager.GameState.GameOver:
                 ChangeCamera(CameraController.CameraType.FailCamera);
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(gameState), gameState, null);
         }
     }
 

@@ -13,15 +13,34 @@ public class AutoRotate : MonoBehaviour
 
     private Vector3 prevPos;
 
+    private GameManager gameManager;
+
     [Inject]
-    private void Construct()
+    private void Construct(GameManager _gameManager)
     {
+        gameManager = _gameManager;
         prevPos = transform.position;
         targetRotation = transform.rotation;
+        GameManager.OnGameStateChange += OnGameStateChange;
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.OnGameStateChange -= OnGameStateChange;
+    }
+
+    private void OnGameStateChange(GameManager.GameState gameState)
+    {
+        if (gameState == GameManager.GameState.Gameplay)
+        {
+            prevPos = transform.position;
+        }
     }
 
     private void Update()
     {
+        if (gameManager.CurrentState != GameManager.GameState.Gameplay) return;
+
         var newPos = transform.position;
         var displacement = newPos - prevPos;
         var sqrDist = displacement.sqrMagnitude;

@@ -23,9 +23,9 @@ public class Stack : Poolable
     }
 
     [SerializeField, Foldout("Setup")] private MeshRenderer meshRenderer;
-    [SerializeField, Foldout("Setup")] private Transform midPoint;
+    [SerializeField, Foldout("Setup")] private List<Transform> stackPoints;
 
-    public Transform MidPoint => midPoint;
+    public List<Transform> StackPoints => stackPoints;
 
     public StackState State => stateMachine.CurrentState;
     public float XLenght => targetScale.x;

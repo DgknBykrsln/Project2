@@ -35,6 +35,7 @@ public class UiPanel : MonoBehaviour
     public IEnumerator FadeOutRoutine(float duration)
     {
         canvasGroup.interactable = false;
+        canvasGroup.alpha = 1;
         yield return canvasGroup.DOFade(0, duration).WaitForCompletion();
 
         foreach (var uiElement in uiElements)
@@ -49,6 +50,8 @@ public class UiPanel : MonoBehaviour
         {
             uiElement.Appear();
         }
+
+        canvasGroup.alpha = 0;
 
         yield return canvasGroup.DOFade(1, duration).WaitForCompletion();
         canvasGroup.interactable = true;

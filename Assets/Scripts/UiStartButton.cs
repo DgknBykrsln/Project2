@@ -17,6 +17,5 @@ public class UiStartButton : Button
         base.OnPointerDown(eventData);
 
         _gameManager.GameStarted();
-        gameObject.SetActive(false);
     }
 }

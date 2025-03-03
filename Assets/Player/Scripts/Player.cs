@@ -8,28 +8,28 @@ using Zenject;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField, BoxGroup("Settings")] private AnimationCurve jumpCurve;
-
+    [SerializeField, BoxGroup("Settings")] private float initialZPos;
     [SerializeField, BoxGroup("Settings")] private float speedDivisor;
     [SerializeField, BoxGroup("Settings")] private float finishSpeed;
+    [SerializeField, BoxGroup("Settings")] private AnimationCurve jumpCurve;
     [SerializeField, BoxGroup("Settings")] private Vector2 speedRange;
 
+    [SerializeField, Foldout("Setup")] private Transform visual;
     [SerializeField, Foldout("Setup")] private Transform jumpRoot;
     [SerializeField, Foldout("Setup")] private PlayerAnimationController animationController;
 
     public enum PlayerState
     {
         Intro,
-        Stay,
         MovePath,
         Win,
         Fail
     }
 
+    public static Action PlayerFailed;
+
     private StateMachine<Player, PlayerState> stateMachine;
     private StackManager stackManager;
-
-    public static Action PlayerFailed;
 
     [Inject]
     private void Construct(StateMachine<Player, PlayerState> _stateMachine, StackManager _stackManager)
@@ -55,6 +55,11 @@ public class Player : MonoBehaviour
 
     private void IntroEnter()
     {
+        visual.gameObject.SetActive(true);
+        jumpRoot.localPosition = Vector3.zero;
+        animationController.Stay();
+        transform.position = Vector3.forward * initialZPos;
+        transform.rotation = Quaternion.identity;
     }
 
     private void IntroExecute()
@@ -62,23 +67,6 @@ public class Player : MonoBehaviour
     }
 
     private void IntroExit()
-    {
-    }
-
-    #endregion
-
-    #region Stay
-
-    private void StayEnter()
-    {
-        animationController.Stay();
-    }
-
-    private void StayExecute()
-    {
-    }
-
-    private void StayExit()
     {
     }
 
@@ -221,27 +209,28 @@ public class Player : MonoBehaviour
         zPos = transform.position.z;
         failMoveTween = transform.DOMoveZ(zPos + stackManager.StackZLength * .25f, speedRange.x).SetSpeedBased();
 
-        const float fallSpeed = 5f;
-        yield return jumpRoot.DOMoveY(-5, fallSpeed).SetEase(jumpCurve).SetSpeedBased().WaitForCompletion();
+        const float fallSpeed = 7f;
+        yield return jumpRoot.DOMoveY(-10, fallSpeed).SetEase(jumpCurve).SetSpeedBased().WaitForCompletion();
         PlayerFailed?.Invoke();
         failMoveTween?.Kill();
+        visual.gameObject.SetActive(false);
     }
 
     #endregion
 
     #region Methods
 
-    private void OnGameStateChange(GameManager.GameStates gameState)
+    private void OnGameStateChange(GameManager.GameState gameState)
     {
         switch (gameState)
         {
-            case GameManager.GameStates.MainMenu:
+            case GameManager.GameState.MainMenu:
                 stateMachine.ChangeState(PlayerState.Intro);
                 break;
-            case GameManager.GameStates.Gameplay:
+            case GameManager.GameState.Gameplay:
                 stateMachine.ChangeState(PlayerState.MovePath);
                 break;
-            case GameManager.GameStates.LevelCompleted:
+            case GameManager.GameState.LevelCompleted:
                 stateMachine.ChangeState(PlayerState.Win);
                 break;
         }
