@@ -15,6 +15,7 @@ public class CameraController : MonoBehaviour
         FailCamera
     }
 
+    [SerializeField, BoxGroup("Settings")] private bool canResetPosition;
     [SerializeField, BoxGroup("Settings")] private CameraType cameraType;
 
     [SerializeField, Foldout("Setup")] private CinemachineVirtualCamera virtualCamera;
@@ -37,7 +38,7 @@ public class CameraController : MonoBehaviour
 
     private void OnGameStateChange(GameManager.GameState gameState)
     {
-        if (gameState == GameManager.GameState.PrepareLevel)
+        if (gameState == GameManager.GameState.PrepareLevel && canResetPosition)
         {
             transform.position = defaultPosition;
         }

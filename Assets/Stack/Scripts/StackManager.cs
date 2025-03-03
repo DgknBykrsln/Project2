@@ -35,6 +35,7 @@ public class StackManager : MonoBehaviour
     private LevelManager levelManager;
     private ObjectPooler objectPooler;
     private StackMaterialHolder stackMaterialHolder;
+    private SoundManager soundManager;
 
     private Stack.StackMoveDirection currentStackMoveDirection;
 
@@ -48,8 +49,9 @@ public class StackManager : MonoBehaviour
     private StackManagerState stackManagerState;
 
     [Inject]
-    private void Construct(LevelManager _levelManager, ObjectPooler _objectPooler, StackMaterialHolder _stackMaterialHolder)
+    private void Construct(LevelManager _levelManager, ObjectPooler _objectPooler, StackMaterialHolder _stackMaterialHolder, SoundManager _soundManager)
     {
+        soundManager = _soundManager;
         objectPooler = _objectPooler;
         levelManager = _levelManager;
         stackMaterialHolder = _stackMaterialHolder;
@@ -89,12 +91,21 @@ public class StackManager : MonoBehaviour
 
         var cutoffLength = currentMovingStack.XLenght - overlap;
 
+        bool isPrefect;
+
         if (cutoffLength <= perfectPlacementOffset)
         {
+            isPrefect = true;
             overlap = currentMovingStack.XLenght;
             currentXPosition = previousXPosition;
             cutoffLength = 0;
         }
+        else
+        {
+            isPrefect = false;
+        }
+
+        soundManager.PlaySound(SoundManager.SoundType.StackPlace, isPrefect);
 
         currentXLenght = overlap;
 

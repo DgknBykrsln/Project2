@@ -16,13 +16,14 @@ public class GameInstaller : MonoInstaller
     [SerializeField, Foldout("Setup")] private StackManager stackManager;
     [SerializeField, Foldout("Setup")] private Player player;
     [SerializeField, Foldout("Setup")] private CurrencyManager currencyManager;
-
+    [SerializeField, Foldout("Setup")] private SoundManager soundManager;
 
     public override void InstallBindings()
     {
         BindStateMachine<Player, Player.PlayerState>();
         BindStateMachine<Stack, Stack.StackState>();
 
+        BindFromInstance(soundManager);
         BindFromInstance(currencyManager);
         BindFromInstance(player);
         BindFromInstance(stackManager);
