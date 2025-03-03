@@ -4098,7 +4098,7 @@ MonoBehaviour:
   moveDistance: 5
   stackXLength: 3
   stackZLength: 2.7
-  perfectPlacementOffset: 0.25
+  perfectPlacementOffset: 0.15
   stacks: []
 --- !u!4 &641850351
 Transform:
@@ -5434,8 +5434,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 889751898}
-  m_LocalRotation: {x: 0.19727655, y: -0.078423016, z: 0.01583397, w: 0.97707784}
-  m_LocalPosition: {x: 1.5700344, y: 5.489926, z: -6.028636}
+  m_LocalRotation: {x: -0.31929585, y: 0.15346222, z: -0.052476767, w: -0.93367326}
+  m_LocalPosition: {x: 2.530559, y: 6.123424, z: -7.48999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
